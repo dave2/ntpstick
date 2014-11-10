@@ -8,6 +8,17 @@ The "stick" concept is that the board is expected to be placed into
 a PVC tube at least 25mm I.D. with only an Ethernet cable reaching
 the outside world carrying both Ethernet and poor-mans POE.
 
+Structure
+---------
+
+This repo is divided into sections for different parts of the project:
+
+ - hardware/ .. Contains the Kicad sources, schematics in PDF, and generated
+   gerber files.
+ - firmware/ .. Completed builds of the firmware, able to be flashed to 
+   boards over TFTP
+ - src/ .. Source code for the firmware.
+
 Specifications
 --------------
 
