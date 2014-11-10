@@ -1,0 +1,11 @@
+Notes on Kicad source files for NTPstick
+========================================
+
+- These files require the current upstream source of Kicad to be read.
+  In general, versions shipped with most distributions are not new 
+  enough to read these files. At least r5256 is required from the Kicad
+  source repo.
+
+- I have not included separate libraries or footprints that were created
+  for this project. I'll include them at some future point.
+
