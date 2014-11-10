@@ -29,6 +29,7 @@ Specifications
  - Maxim 12-bit DAC for VCXO control
  - WizNet W5500 Ethernet/IP chip
  - 7-37V DC input on spare Ethernet pairs
+ - Board is 140mm long, 25mm wide
  
 License
 -------
