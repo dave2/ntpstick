@@ -1,0 +1,10 @@
+********************************************************************
+**                                                                **
+**       W A R N I N G :   THESE FILES ARE NOT MAINTAINED         **
+**                                                                **
+********************************************************************
+
+You should always generate gerbers from the Kicad source files. These
+are here for reference about what versions were built at various stages.
+
+DO NOT RELY ON THESE FILES FOR MANUFACTURE. ALWAYS GENERATE FROM KICAD.
