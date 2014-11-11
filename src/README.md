@@ -21,12 +21,6 @@ source. Other versions may not work.
 libkakapo upstream can be obtained from here:
 https://github.com/dave2/libkakapo
 
-
-This project uses the XMEGA driver libraries from the Kakapo project,
-called libkakapo. A copy is included in the source tree here.
-
-libkakapo is licensed differently to the rest of the NTPstick firmware.
-
 Build Requirements
 ------------------
 
