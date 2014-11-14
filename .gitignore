@@ -12,3 +12,7 @@
 *.out
 *.hex
 *.bin
+
+# Codeblocks rubbish
+*.cbp
+*.layout
