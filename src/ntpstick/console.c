@@ -51,6 +51,9 @@ typedef struct {
 
 console_t chan[CONSOLE_MAX_CHAN];
 
+/* process any command */
+void console_command(uint8_t chanid);
+
 /* Channel open is passed a stdio file, and starts accepting chars. */
 error_t console_open(uint8_t chanid, FILE *stream) {
     /* check to see we're not out of range */
@@ -161,7 +164,9 @@ error_t console_process(uint8_t chanid) {
     if (c == '\r') {
         /* log a message containing the result */
         fprintf(chan[chanid].stream,"\r\n%s",chan[chanid].cmd_buf);
-        console_prompt(0);
+        /* examine the command for what the result could be */
+        console_command(chanid);
+        console_prompt(chanid);
     }
     return 0;
 }
@@ -177,4 +182,9 @@ error_t console_message(uint8_t chanid, char *message) {
     fprintf(chan[chanid].stream,"%s",chan[chanid].prompt_buf);
     /* FIXME: and the current command buffer state, and cursor position */
     return 0;
+}
+
+/* command processing actually takes place here */
+void console_command(uint8_t chanid) {
+    return;
 }
