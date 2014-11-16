@@ -20,6 +20,7 @@
 
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 #include "ntpstick.h"
 #include <libkakapo/global.h>
 #include <avr/io.h>
@@ -38,9 +39,17 @@
 
 /* hook to get processing of debug working */
 void debugcon_hook(uint8_t c);
+void telnetd_s0_accept(void);
+void telnetd_s0_rx(void);
 
 volatile uint8_t flags;
 #define FLAG_DEBUGCON 0x01
+#define FLAG_TELNETD0 0x02
+#define FLAG_TELNETD1 0x04
+#define FLAG_W5500 0x08
+
+FILE *telnetd_s0;
+FILE *telnetd_s1;
 
 /* global variables needed from eeprom */
 /* note: these are placeholders re-written by config_restore() */
@@ -100,8 +109,6 @@ void main(void) {
         twi_init(twi_e,400);
         twi_write(twi_e,0x50,"\xFA",1);
         twi_read(twi_e,0x50,&mac,6);
-        printf_P(PSTR("mac: %02x:%02x:%02x:%02x:%02x:%02x\r\n"),
-            mac[0], mac[1], mac[2], mac[3], mac[4], mac[5]);
 
         eeprom_read_block(&ip,&eeprom_v4,4);
         eeprom_read_block(&gw,&eeprom_v4gw,4);
@@ -109,12 +116,21 @@ void main(void) {
 
         w5500_init(spi_d,&PORTD,PIN4_bm,mac);
         w5500_ip_conf(ip,cidr,gw);
-        printf_P(PSTR("ip: %d.%d.%d.%d/%d (gw %d.%d.%d.%d)\r\n"),
-            ip[0], ip[1], ip[2], ip[3], cidr, gw[0], gw[1], gw[2], gw[3]);
     }
+
+    /* configure the interrupt for w5500 events */
+    PORTC.DIRCLR = PIN4_bm;
+    PORTC.PIN4CTRL = PORT_ISC_FALLING_gc;
+    PORTC.INT0MASK |= PIN4_bm;
+    PORTC.INTCTRL |= PORT_INT0LVL_LO_gc; /* low prio */
 
     console_set_prompt(0,"ntpstick$ ");
     console_prompt(0);
+
+    /* set up telnetd */
+    w5500_socket_init(0,2,2);
+    w5500_tcp_listen(0,23,&telnetd_s0_accept,&telnetd_s0_rx);
+    telnetd_s0 = w5500_tcp_map_stdio(0,32);
 
     idle = 0;
     while (1) {
@@ -122,6 +138,10 @@ void main(void) {
             flags &= ~(FLAG_DEBUGCON);
             console_process(0);
             //console_message(0,"Got char!");
+        }
+        if (flags & FLAG_W5500) {
+            flags &= ~(FLAG_W5500);
+            w5500_poll();
         }
         idle++;
         cli();
@@ -149,7 +169,31 @@ void config_check(void) {
         uint8_t addr[4] = {10,32,34,8};
         eeprom_write_block((const void *)&addr,(void *)&eeprom_v4,4);
         eeprom_write_byte(&eeprom_v4cidr,24);
+        memset(addr,0,4);
+        eeprom_write_block((const void *)&addr,(void *)&eeprom_v4gw,4);
         /* now finish up with the writes for the magic number */
         eeprom_write_word(&eeprom_magic,EEPROM_MAGIC);
     }
+}
+
+ISR(PORTC_INT0_vect) {
+    /* check to see if the level on PC2 is low */
+    if (!(PORTC.IN & PIN4_bm)) {
+        flags |= FLAG_W5500;
+    }
+}
+
+void telnetd_s0_accept(void) {
+    console_message(0,"telnetd: new connection opened\r\n");
+    fprintf_P(telnetd_s0,PSTR("ntpstick-1.1-telnetd\r\n"));
+    console_open(1,telnetd_s0);
+    console_set_prompt(1,"ntpstick$ ");
+    console_prompt(1);
+    w5500_tcp_push(0); /* force packets to be sent */
+}
+
+void telnetd_s0_rx(void) {
+    console_process(1);
+    /* force a flush of the packets it may have generated */
+    w5500_tcp_push(0);
 }

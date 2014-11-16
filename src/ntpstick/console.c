@@ -32,7 +32,7 @@
 
 #define CONSOLE_MAX_CMD 64
 #define CONSOLE_MAX_PROMPT 32
-#define CONSOLE_MAX_CHAN 1
+#define CONSOLE_MAX_CHAN 3
 
 typedef enum {
     ch_input_default = 0, /**< Default range of characters */
@@ -131,42 +131,50 @@ error_t console_prompt(uint8_t chanid) {
 }
 
 error_t console_process(uint8_t chanid) {
-    char c;
+    int c;
 
     if (chanid >= CONSOLE_MAX_CHAN) {
         return -ENODEV;
     }
 
-    c = fgetc(chan[chanid].stream);
-
-    /* now work out what we're doing with it */
-    if ((c >= 0x20 && c <= 0x7e)) {
-        if (chan[chanid].end < CONSOLE_MAX_CMD) {
-            /* add it to the command buffer */
-            chan[chanid].cmd_buf[chan[chanid].end] = c;
-            chan[chanid].end++;
-            fputc(c,chan[chanid].stream);
-        } else {
-            fputc('\a',chan[chanid].stream);
+    /* keep processing chars until we run out */
+    while (1) {
+        c = fgetc(chan[chanid].stream);
+        if (c == EOF) {
+            break;
         }
-    }
-    if (c == 0x8 || c == 0x7f) {
-        /* delete! */
-        if (chan[chanid].end == 0) {
-            fputc('\a',chan[chanid].stream);
-        } else {
-            chan[chanid].cmd_buf[chan[chanid].end] = 0;
-            chan[chanid].end--;
-            fprintf(chan[chanid].stream,"\b \b");
-        }
-    }
 
-    if (c == '\r') {
-        /* log a message containing the result */
-        fprintf(chan[chanid].stream,"\r\n%s",chan[chanid].cmd_buf);
-        /* examine the command for what the result could be */
-        console_command(chanid);
-        console_prompt(chanid);
+        /* now work out what we're doing with it */
+        if ((c >= 0x20 && c <= 0x7e)) {
+            if (chan[chanid].end < CONSOLE_MAX_CMD) {
+                /* add it to the command buffer */
+                chan[chanid].cmd_buf[chan[chanid].end] = c;
+                chan[chanid].end++;
+                fputc(c,chan[chanid].stream);
+            } else {
+                fputc('\a',chan[chanid].stream);
+            }
+        }
+        if (c == 0x8 || c == 0x7f) {
+            /* delete! */
+            if (chan[chanid].end == 0) {
+                fputc('\a',chan[chanid].stream);
+            } else {
+                chan[chanid].cmd_buf[chan[chanid].end] = 0;
+                chan[chanid].end--;
+                fprintf(chan[chanid].stream,"\b \b");
+            }
+        }
+
+        if (c == '\r') {
+            /* log a message containing the result */
+            if (chan[chanid].end > 0) {
+                fprintf(chan[chanid].stream,"\r\n%s",chan[chanid].cmd_buf);
+                /* examine the command for what the result could be */
+                console_command(chanid);
+            }
+            console_prompt(chanid);
+        }
     }
     return 0;
 }

@@ -18,9 +18,9 @@ CFLAGS   += -fshort-enums -Wstrict-prototypes -Wall -mcall-prologues -iquote. -I
 CFLAGS   += -mmcu=$(MCU)
 CFLAGS	 += -D'BUILDDATE="$(shell date +%Y%m%d%H%M)"'
 # This is a magic number to detect the need to reset the eeprom on upgrades
-CFLAGS	 += -DEEPROM_MAGIC=0xa73c
+CFLAGS	 += -DEEPROM_MAGIC=0xa73e
 INCLUDE   = -L../libkakapo
-OBJ       = $(patsubst %.c,%.o,$(wildcard *.c))
+OBJ       = $(patsubst %.c,%.o,$(wildcard *.c)) ../libkakapo/libkakapo.a
 SIZEFLAGS =
 ifdef F_CPU
 CFLAGS	+= -DF_CPU=$(F_CPU)
