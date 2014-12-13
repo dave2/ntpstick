@@ -21,6 +21,12 @@
  * If not, see <http://www.gnu.org/licenses/>.
  */
 
+/** \brief Modes that a console session can operate in */
+typedef enum {
+    ch_mode_serial = 0, /**< Serial mode */
+    ch_mode_telnet, /**< Telnet mode */
+} ch_mode_t;
+
 /** \brief Open a console channel, given an stdio handle for it
  *
  *  This will initalise the buffers and associate the given file
@@ -28,9 +34,10 @@
  *
  *  \param chanid What channel number to open (0-n)
  *  \param stream Pointer to the stdio stream to read/write from
+ *  \param mode Mode to operate this console in
  *  \return 0 on success, libkakapo/errors.h otherwise
  */
-error_t console_open(uint8_t chanid, FILE *stream);
+error_t console_open(uint8_t chanid, FILE *stream, ch_mode_t mode);
 
 /** \brief Close the channel.
  *
@@ -84,5 +91,7 @@ error_t console_prompt(uint8_t chanid);
  *  \return 0 on success, libkakapo/errors.h otherwise
  */
 error_t console_message(uint8_t chanid, char *message);
+
+void console_version(FILE *where);
 
 #endif // CONSOLE_H_INCLUDED

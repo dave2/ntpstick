@@ -39,17 +39,18 @@
 
 /* hook to get processing of debug working */
 void debugcon_hook(uint8_t c);
-void telnetd_s0_accept(void);
-void telnetd_s0_rx(void);
+void gps_hook(uint8_t c);
+void telnetd_hook(uint8_t socket, w5500_event_t event);
 
 volatile uint8_t flags;
 #define FLAG_DEBUGCON 0x01
 #define FLAG_TELNETD0 0x02
 #define FLAG_TELNETD1 0x04
 #define FLAG_W5500 0x08
+#define FLAG_GPS 0x10
+#define FLAG_TELNET_OPEN 0x20
 
-FILE *telnetd_s0;
-FILE *telnetd_s1;
+#undef DEBUG_GPS_PASS
 
 /* global variables needed from eeprom */
 /* note: these are placeholders re-written by config_restore() */
@@ -63,12 +64,13 @@ uint8_t EEMEM eeprom_v4gw[4];
 
 /* private prototypes */
 void config_check(void);
+void spam_version(FILE *where);
 
 /* This is the main firmware entry point */
 
 void main(void) {
     uint8_t idle;
-    FILE *debugcon;
+    FILE *debugcon, *gps;
 
     /* FIXME: rewrite for VCXO init */
 
@@ -81,7 +83,7 @@ void main(void) {
     PMIC.CTRL = PMIC_HILVLEN_bm | PMIC_MEDLVLEN_bm | PMIC_LOLVLEN_bm;
  	sei();
 
-    PORTE.DIRSET = PIN2_bm | PIN3_bm;
+    PORTA.DIRSET = PIN5_bm | PIN6_bm;
 
     flags = 0;
     set_sleep_mode(SLEEP_MODE_IDLE); /* just stop clocking CPU when required to idle */
@@ -97,51 +99,91 @@ void main(void) {
     putchar(0);
     _delay_ms(1);
 
-    console_open(0,debugcon);
+#ifndef DEBUG_GPS_PASS
+    console_open(0,debugcon,ch_mode_serial);
+    console_version(debugcon);
+#endif
 
-    printf_P(PSTR("\fNTPstick v1.1\r\nFirmware Build %s\r\nCopyright 2014 David Zanetti\r\nLicensed under GPLv2\r\nhairy.geek.nz/ntp\r\n"),
-            BUILDDATE);
+    /* start passing through GPS noise */
+    usart_init(usart_e0,128,64);
+    usart_conf(usart_e0,9600,8,none,1,U_FEAT_NONE,&gps_hook);
+    usart_run(usart_e0);
+    gps = usart_map_stdio(usart_e0);
 
     /* commence configuration of the network */
     {
         uint8_t mac[6], ip[4], cidr, gw[4];
 
-        twi_init(twi_e,400);
-        twi_write(twi_e,0x50,"\xFA",1);
-        twi_read(twi_e,0x50,&mac,6);
+        twi_init(twi_c,400);
+        twi_write(twi_c,0x50,"\xFA",1);
+        twi_read(twi_c,0x50,&mac,6);
+
+        printf("mac: %02x:%02x:%02x:%02x:%02x:%02x\r\n",
+            mac[0], mac[1], mac[2], mac[3], mac[4], mac[5]);
 
         eeprom_read_block(&ip,&eeprom_v4,4);
         eeprom_read_block(&gw,&eeprom_v4gw,4);
         cidr = eeprom_read_byte(&eeprom_v4cidr);
 
-        w5500_init(spi_d,&PORTD,PIN4_bm,mac);
+        /* do a hard reset */
+        PORTC.DIRSET = PIN2_bm;
+        PORTC.OUTCLR = PIN2_bm;
+        _delay_ms(1);
+        PORTC.OUTSET = PIN2_bm;
+        _delay_ms(1);
+
+        w5500_init(spi_c,&PORTC,PIN4_bm,mac);
         w5500_ip_conf(ip,cidr,gw);
     }
 
     /* configure the interrupt for w5500 events */
-    PORTC.DIRCLR = PIN4_bm;
-    PORTC.PIN4CTRL = PORT_ISC_FALLING_gc;
-    PORTC.INT0MASK |= PIN4_bm;
+    PORTC.DIRCLR = PIN3_bm;
+    PORTC.PIN3CTRL = PORT_ISC_FALLING_gc;
+    PORTC.INT0MASK |= PIN3_bm;
     PORTC.INTCTRL |= PORT_INT0LVL_LO_gc; /* low prio */
 
     console_set_prompt(0,"ntpstick$ ");
     console_prompt(0);
 
     /* set up telnetd */
-    w5500_socket_init(0,2,2);
-    w5500_tcp_listen(0,23,&telnetd_s0_accept,&telnetd_s0_rx);
-    telnetd_s0 = w5500_tcp_map_stdio(0,32);
+    telnetd_listen(0,1);
 
     idle = 0;
     while (1) {
         if (flags & FLAG_DEBUGCON) {
+            int c;
+
             flags &= ~(FLAG_DEBUGCON);
+#ifndef DEBUG_GPS_PASS
             console_process(0);
+#else
+            while (1) {
+                c = fgetc(debugcon);
+                if (c == EOF) {
+                    break;
+                }
+                fputc(c,gps);
+            }
+#endif
             //console_message(0,"Got char!");
+        }
+        if (flags & FLAG_GPS) {
+            uint16_t c;
+
+            flags &= ~(FLAG_GPS);
+            while (1) {
+                c = fgetc(gps);
+                if (c == EOF) {
+                    break;
+                }
+                fputc(c,debugcon);
+            }
         }
         if (flags & FLAG_W5500) {
             flags &= ~(FLAG_W5500);
-            w5500_poll();
+            while (!(PORTC.IN & PIN3_bm)) {
+                w5500_poll();
+            }
         }
         idle++;
         cli();
@@ -158,6 +200,12 @@ void main(void) {
 
 void debugcon_hook(uint8_t c) {
     flags |= FLAG_DEBUGCON;
+}
+
+void gps_hook(uint8_t c) {
+    if (c == '\n') {
+        flags |= FLAG_GPS;
+    }
 }
 
 /* this validates we have a valid configuration in the eeprom */
@@ -178,22 +226,7 @@ void config_check(void) {
 
 ISR(PORTC_INT0_vect) {
     /* check to see if the level on PC2 is low */
-    if (!(PORTC.IN & PIN4_bm)) {
+    if (!(PORTC.IN & PIN3_bm)) {
         flags |= FLAG_W5500;
     }
-}
-
-void telnetd_s0_accept(void) {
-    console_message(0,"telnetd: new connection opened\r\n");
-    fprintf_P(telnetd_s0,PSTR("ntpstick-1.1-telnetd\r\n"));
-    console_open(1,telnetd_s0);
-    console_set_prompt(1,"ntpstick$ ");
-    console_prompt(1);
-    w5500_tcp_push(0); /* force packets to be sent */
-}
-
-void telnetd_s0_rx(void) {
-    console_process(1);
-    /* force a flush of the packets it may have generated */
-    w5500_tcp_push(0);
 }

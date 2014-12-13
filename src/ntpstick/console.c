@@ -28,17 +28,13 @@
 #include "ntpstick.h"
 #include <libkakapo/global.h>
 #include <libkakapo/errors.h>
+#include <avr/pgmspace.h>
 #include "console.h"
+#include "telnetd.h"
 
 #define CONSOLE_MAX_CMD 64
 #define CONSOLE_MAX_PROMPT 32
 #define CONSOLE_MAX_CHAN 3
-
-typedef enum {
-    ch_input_default = 0, /**< Default range of characters */
-    ch_input_ip, /**< Only accept keys which match IP address ranges */
-    ch_input_yn, /**< Only accept Y or N for questions */
-} ch_input_t;
 
 typedef struct {
     char cmd_buf[CONSOLE_MAX_CMD]; /**< Command buffer for this channel */
@@ -46,7 +42,7 @@ typedef struct {
     uint8_t end; /**< Where is the end of the command buffer */
     char prompt_buf[CONSOLE_MAX_PROMPT]; /**< Prompt for this channel */
     FILE *stream; /**< stdio stream associated with it */
-    ch_input_t accept; /**< what chars we are accepting at this time */
+    ch_mode_t mode; /**< console mode */
 } console_t;
 
 console_t chan[CONSOLE_MAX_CHAN];
@@ -55,7 +51,7 @@ console_t chan[CONSOLE_MAX_CHAN];
 void console_command(uint8_t chanid);
 
 /* Channel open is passed a stdio file, and starts accepting chars. */
-error_t console_open(uint8_t chanid, FILE *stream) {
+error_t console_open(uint8_t chanid, FILE *stream, ch_mode_t mode) {
     /* check to see we're not out of range */
     if (chanid >= CONSOLE_MAX_CHAN) {
         return -ENODEV;
@@ -71,7 +67,7 @@ error_t console_open(uint8_t chanid, FILE *stream) {
     memset(chan[chanid].cmd_buf,0,CONSOLE_MAX_CMD);
     memset(chan[chanid].prompt_buf,0,CONSOLE_MAX_PROMPT);
     chan[chanid].stream = stream;
-    chan[chanid].accept = ch_input_default;
+    chan[chanid].mode = mode; /* apply mode! */
 
     /* don't output prompt since we have none! */
 
@@ -171,9 +167,16 @@ error_t console_process(uint8_t chanid) {
             if (chan[chanid].end > 0) {
                 fprintf(chan[chanid].stream,"\r\n%s",chan[chanid].cmd_buf);
                 /* examine the command for what the result could be */
+                printf("\r\ncmd");
                 console_command(chanid);
             }
             console_prompt(chanid);
+        }
+
+        if (c == 0xff && chan[chanid].mode == ch_mode_telnet) {
+            /* do processing of telnet commands from the given stream, one
+               at a time */
+            telnetd_command(chan[chanid].stream);
         }
     }
     return 0;
@@ -195,4 +198,9 @@ error_t console_message(uint8_t chanid, char *message) {
 /* command processing actually takes place here */
 void console_command(uint8_t chanid) {
     return;
+}
+
+void console_version(FILE *where) {
+    fprintf_P(where,PSTR("\fNTPstick v1.1\r\nFirmware Build %s\r\nCopyright 2014 David Zanetti\r\nSee source code for license\r\nhairy.geek.nz/ntp\r\n"),
+            BUILDDATE);
 }

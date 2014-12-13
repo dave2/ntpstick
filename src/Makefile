@@ -4,7 +4,7 @@
 # a firmware image if required or flashing directly over an external
 # programmer
 
-MCU=atxmega64d4
+MCU=atxmega128a4u
 TOOLBASE=/usr/local/avr
 F_CPU=32000000
 export MCU TOOLBASE PORT F_CPU
