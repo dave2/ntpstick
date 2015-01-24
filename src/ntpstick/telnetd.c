@@ -98,10 +98,10 @@ error_t telnetd_listen(uint8_t socka, uint8_t sockb) {
     /* set up telnetd */
     w5500_socket_init(socka,2,2);
     w5500_tcp_listen(socka,23,&telnetd_hook);
-    telnetd[0] = w5500_tcp_map_stdio(socka,32);
+    telnetd[0] = w5500_tcp_map_stdio(socka,128);
     w5500_socket_init(sockb,2,2);
     w5500_tcp_listen(sockb,23,&telnetd_hook);
-    telnetd[1] = w5500_tcp_map_stdio(sockb,32);
+    telnetd[1] = w5500_tcp_map_stdio(sockb,128);
 
     return 0;
 }
@@ -155,6 +155,7 @@ void telnetd_hook(uint8_t socket, w5500_event_t event) {
             fprintf_P(telnetd[socket],PSTR("\xff\xfd\x03\xff\xfe\x22\xff\xfc\x05\xff\xfb\x01"));
             w5500_tcp_push(socket);
             console_open(1,telnetd[socket],ch_mode_telnet);
+            console_process(1); /* force it to eat whatever we got sent */
             console_set_prompt(1,"ntpstick$ ");
             console_version(telnetd[socket]);
             console_prompt(1);
@@ -162,7 +163,7 @@ void telnetd_hook(uint8_t socket, w5500_event_t event) {
             //flags |= FLAG_TELNET_OPEN;
             break;
         case w5500_rx:
-            console_message(0,"telnetd: rx");
+            //console_message(0,"telnetd: rx");
             console_process(1);
             /* force a flush of the packets it may have generated */
             w5500_tcp_push(socket);

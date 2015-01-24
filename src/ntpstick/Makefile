@@ -36,7 +36,7 @@ program: $(APP).hex
 	$(AVRDUDE) -p $(MCU) -c avr109 -P $(PORT) -b 115200 -U flash:w:$(APP).hex -e
 
 ext-program: $(APP).hex
-	$(AVRDUDE) -p $(MCU) -c avrisp2 -P usb -U application:w:$(APP).hex
+	$(AVRDUDE) -p $(MCU) -c atmelice_pdi -U application:w:$(APP).hex
 
 $(APP).hex: $(APP).elf
 	$(OBJCOPY) -O ihex -R .eeprom $< $@

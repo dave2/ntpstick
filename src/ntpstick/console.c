@@ -140,6 +140,13 @@ error_t console_process(uint8_t chanid) {
             break;
         }
 
+        /* must happen first to consume extra chars in order */
+        if (c == 0xff && chan[chanid].mode == ch_mode_telnet) {
+            /* do processing of telnet commands from the given stream, one
+               at a time */
+            telnetd_command(chan[chanid].stream);
+        }
+
         /* now work out what we're doing with it */
         if ((c >= 0x20 && c <= 0x7e)) {
             if (chan[chanid].end < CONSOLE_MAX_CMD) {
@@ -173,11 +180,6 @@ error_t console_process(uint8_t chanid) {
             console_prompt(chanid);
         }
 
-        if (c == 0xff && chan[chanid].mode == ch_mode_telnet) {
-            /* do processing of telnet commands from the given stream, one
-               at a time */
-            telnetd_command(chan[chanid].stream);
-        }
     }
     return 0;
 }

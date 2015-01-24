@@ -36,6 +36,7 @@
 #include <libkakapo/twi.h>
 #include <libkakapo/net_w5500.h>
 #include "console.h"
+#include "max580x.h"
 
 /* hook to get processing of debug working */
 void debugcon_hook(uint8_t c);
@@ -91,7 +92,7 @@ void main(void) {
 
     /* init some serial ports! */
     usart_init(usart_d0,64,128);
-    usart_conf(usart_d0,115200,8,none,1,U_FEAT_NONE,&debugcon_hook);
+    usart_conf(usart_d0,921600,8,none,1,U_FEAT_NONE,&debugcon_hook);
     usart_run(usart_d0);
     debugcon = usart_map_stdio(usart_d0);
 
@@ -105,16 +106,18 @@ void main(void) {
 #endif
 
     /* start passing through GPS noise */
-    usart_init(usart_e0,128,64);
+    usart_init(usart_e0,256,64);
     usart_conf(usart_e0,9600,8,none,1,U_FEAT_NONE,&gps_hook);
     usart_run(usart_e0);
     gps = usart_map_stdio(usart_e0);
 
+    /* init I2C port for both DAC and MAC EEPROM */
+    twi_init(twi_c,400);
+
     /* commence configuration of the network */
-    {
+    if (0) {
         uint8_t mac[6], ip[4], cidr, gw[4];
 
-        twi_init(twi_c,400);
         twi_write(twi_c,0x50,"\xFA",1);
         twi_read(twi_c,0x50,&mac,6);
 
@@ -142,11 +145,15 @@ void main(void) {
     PORTC.INT0MASK |= PIN3_bm;
     PORTC.INTCTRL |= PORT_INT0LVL_LO_gc; /* low prio */
 
+    /* find out if the DAC is there */
+    max580x_init(twi_c,0);
+
     console_set_prompt(0,"ntpstick$ ");
     console_prompt(0);
 
+
     /* set up telnetd */
-    telnetd_listen(0,1);
+    //telnetd_listen(0,1);
 
     idle = 0;
     while (1) {
@@ -168,16 +175,12 @@ void main(void) {
             //console_message(0,"Got char!");
         }
         if (flags & FLAG_GPS) {
-            uint16_t c;
+            uint16_t x;
+            uint8_t c[255], n = 0;
 
             flags &= ~(FLAG_GPS);
-            while (1) {
-                c = fgetc(gps);
-                if (c == EOF) {
-                    break;
-                }
-                fputc(c,debugcon);
-            }
+            /* process some GPS stuff, drain for now */
+            while (fgetc(gps) != EOF);
         }
         if (flags & FLAG_W5500) {
             flags &= ~(FLAG_W5500);
