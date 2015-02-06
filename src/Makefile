@@ -7,7 +7,8 @@
 MCU=atxmega128a4u
 TOOLBASE=/usr/local/avr
 F_CPU=32000000
-export MCU TOOLBASE PORT F_CPU
+DEBUG=4
+export MCU TOOLBASE PORT F_CPU DEBUG
 
 firmware:
 	( cd libkakapo; make)

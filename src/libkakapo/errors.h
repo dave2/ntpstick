@@ -21,10 +21,10 @@
 #ifndef ERRORS_H_INCLUDED
 #define ERRORS_H_INCLUDED
 
+#include <errno.h>
+
 /* a type which holds the size of errors */
 typedef uint16_t error_t;
-
-#include <errno.h>
 
 /** \file
  *  \brief Error numbers we use in errno on top of the avr-libc

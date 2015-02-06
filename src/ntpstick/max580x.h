@@ -53,4 +53,16 @@ error_t max580x_init(twi_portname_t port, uint8_t addr);
  */
 error_t max580x_set(twi_portname_t port, uint8_t addr, uint16_t value);
 
+/** \brief Read the current DAC value
+ *
+ * This returns the 16-bit value of the *actual* DAC output, not the buffered
+ * DAC registers (which may or may not have been pushed into the DAC output
+ * yet. Low bits will be set to 0 where precision is not provided for them.
+ *
+ * \param port Which I2C port to use
+ * \param addr The bottom two address select bits (NOT the full address)
+ * \return 16-bit current DAC output value
+ */
+uint16_t max580x_read(twi_portname_t port, uint8_t addr);
+
 #endif // MAX580X_H_INCLUDED

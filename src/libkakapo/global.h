@@ -21,7 +21,7 @@
 #ifndef GLOBAL_H_INCLUDED
 #define GLOBAL_H_INCLUDED
 
-/* fall back in case someone didn't define it */
+/* Fallback in case it's not defined */
 #ifndef F_CPU
 #define F_CPU 32000000
 #endif

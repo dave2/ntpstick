@@ -203,6 +203,6 @@ void console_command(uint8_t chanid) {
 }
 
 void console_version(FILE *where) {
-    fprintf_P(where,PSTR("\fNTPstick v1.1\r\nFirmware Build %s\r\nCopyright 2014 David Zanetti\r\nSee source code for license\r\nhairy.geek.nz/ntp\r\n"),
+    fprintf_P(where,PSTR("\fNTPstick v1.1\r\nFirmware Build %s\r\nCopyright 2014-2015 David Zanetti\r\nSee source code for license\r\nhairy.geek.nz/ntp\r\n"),
             BUILDDATE);
 }

@@ -27,7 +27,7 @@
 extern "C" {
 #endif
 
-#include <libkakapo/global.h>
+#include "global.h"
 
 /** \file
  *  \brief USART driver public API

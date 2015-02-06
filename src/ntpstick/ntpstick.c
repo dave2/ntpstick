@@ -118,8 +118,8 @@ void main(void) {
     if (0) {
         uint8_t mac[6], ip[4], cidr, gw[4];
 
-        twi_write(twi_c,0x50,"\xFA",1);
-        twi_read(twi_c,0x50,&mac,6);
+        twi_write(twi_c,0x50,"\xFA",1,1);
+        twi_read(twi_c,0x50,&mac,6,1);
 
         printf("mac: %02x:%02x:%02x:%02x:%02x:%02x\r\n",
             mac[0], mac[1], mac[2], mac[3], mac[4], mac[5]);
@@ -147,6 +147,8 @@ void main(void) {
 
     /* find out if the DAC is there */
     max580x_init(twi_c,0);
+    max580x_set(twi_c,0,0x7fff);
+    //printf("current value is %04x\r\n",max580x_read(twi_c,0));
 
     console_set_prompt(0,"ntpstick$ ");
     console_prompt(0);
