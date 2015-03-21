@@ -23,9 +23,6 @@
 
 #include <errno.h>
 
-/* a type which holds the size of errors */
-typedef uint16_t error_t;
-
 /** \file
  *  \brief Error numbers we use in errno on top of the avr-libc
  *  defined ones

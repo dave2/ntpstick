@@ -514,11 +514,12 @@ int w5500_ip_conf(uint8_t *ip, uint8_t cidr, uint8_t *gw) {
         k_debug("no such device");
 		return -ENODEV;
 	}
-	/* compute mask from cidr length */
-	mask = (0xffff << (32-cidr));
 
-    k_debug("updating IP address to %d.%d.%d.%d/%d.%d.%d.%d",
-        ip[0],ip[1],ip[2],ip[3],mask >> 24, mask >> 16, mask >> 8, mask & 0xff);
+	/* compute mask from cidr length */
+	mask = (UINT32_C(0xffffffff) << (32-cidr));
+
+    k_debug("updating IP address to %d.%d.%d.%d/%08x",
+        ip[0],ip[1],ip[2],ip[3],mask);
 	/* write the details to the common register */
 	_write_block(BLK_COMMON,COM_SIPR0,4,ip);
 	_write_block(BLK_COMMON,COM_SUBR0,4,(uint8_t *)&mask);
@@ -1143,7 +1144,7 @@ int w5500_udp_rxmeta(uint8_t socknum, uint8_t *ip, uint16_t *port, uint16_t *len
     return 0;
 }
 
-int w5500_udp_read(uint8_t socknum, uint16_t len, uint8_t *buf) {
+int w5500_udp_read(uint8_t socknum, uint16_t len, void *buf) {
     uint16_t crxrp;
     /* the UDP code doesn't use the socktable buffers because
      * the vast majority of occasions we'll be reading whole
@@ -1181,7 +1182,7 @@ int w5500_udp_read(uint8_t socknum, uint16_t len, uint8_t *buf) {
 
     crxrp = _read_reg16(BLK_SOCKET_REG(socknum),SOCK_RX_RD0);
     if (buf) {
-        _read_block(BLK_SOCKET_RX(socknum),crxrp,len,buf);
+        _read_block(BLK_SOCKET_RX(socknum),crxrp,len,(uint8_t *)buf);
     }
     /* update the pointer, and ack it even tho we don't send back anything */
     crxrp += len;
@@ -1193,7 +1194,7 @@ int w5500_udp_read(uint8_t socknum, uint16_t len, uint8_t *buf) {
     return len; /* tell the caller how much they got */
 }
 
-int w5500_udp_write(uint8_t socknum, uint16_t len, uint8_t *buf) {
+int w5500_udp_write(uint8_t socknum, uint16_t len, void *buf) {
     uint16_t ctxwp;
 
     /* sanity check */
@@ -1224,7 +1225,7 @@ int w5500_udp_write(uint8_t socknum, uint16_t len, uint8_t *buf) {
     /* write the block out */
     /* send the bulk data, and increment the write pointer to match */
     ctxwp = _read_reg16(BLK_SOCKET_REG(socknum),SOCK_TX_WR0);
-    _write_block(BLK_SOCKET_TX(socknum),ctxwp,len,buf);
+    _write_block(BLK_SOCKET_TX(socknum),ctxwp,len,(uint8_t *)buf);
     ctxwp += len;
     _socktable[socknum].btxlen += len;
     _write_reg16(BLK_SOCKET_REG(socknum),SOCK_TX_WR0,ctxwp);

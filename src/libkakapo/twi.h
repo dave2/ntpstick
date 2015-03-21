@@ -25,12 +25,21 @@
 extern "C" {
 #endif
 
-/* XMEGA TWI driver
+/** \brief XMEGA Two Wire Interface (TWI) driver
  *
  * TWI (aka I2C, SMBus) provides a low-speed shared serial bus with addressing
  * for nodes, multiple masters and simple connections.
  *
  * Current implementation only supports master mode and 7-bit addressing.
+ *
+ * This API mimics the TWI bus interactions normally provided in datasheets
+ * for devices. A transaction is started with twi_start() to control the bus.
+ * One or more writes/reads take place, and twi_stop() ends the transaction
+ * and releases the bus.
+ *
+ * Changing from read to write or vice-versa requires either ending the
+ * transaction, or a repeated-start by calling twi_start(). What is required
+ * by any device is device-dependant.
  */
 
 /** \brief An enum for each supported TWI interface on various families */
@@ -65,37 +74,71 @@ typedef enum {
 
 #endif
 
+/** \brief TWI data direction indicators */
 typedef enum {
-    twi_stop = 0,
-    twi_nostop,
-} twi_stopmode_t;
+    twi_mode_write = 0, /**< Action on device is write */
+    twi_mode_read, /**< Action on device is read */
+} twi_rwmode_t;
 
-/** \brief Initalise a TWI port
- *  \param portnum Number of the port
+/** \brief Indication of what state to leave the bus */
+typedef enum {
+    twi_stop = 0, /**< Bus to be closed after activity */
+    twi_more, /**< Bus to be left as-is at end of activity */
+} twi_end_t;
+
+/** \brief Initalise a TWI port (as master)
+ *
+ *  \param port Name of the TWI port to use
  *  \param speed Speed of the port, in kHz
  *  \return 0 on success, errors.h otherwise
  */
 int twi_init(twi_portname_t port, uint16_t speed);
 
+/** \brief Start a TWI transaction (master)
+ *
+ *  Asserts a START on the TWI bus, and attempts to hail an address
+ *  for read or write. If the previous activity wasn't a STOP, then
+ *  this is a repeated-start condition.
+ *
+ *  \param port Name of the TWI port to use
+ *  \param addr TWI address (7-bit)
+ *  \param rw Indicate we are reading or writing device
+ *  \return 0 on success, errors.h otherwise
+ */
+int twi_start(twi_portname_t port, uint8_t addr, twi_rwmode_t rw);
+
 /** \brief Write a byte sequence to the specified address (master)
- *  \param portnum Number of the port
+ *
+ *  This can only be called after twi_start() in write mode has been
+ *  called. It can be called multiple times, provided that endstate ==
+ *  twi_more.
+ *
+ *  \param port Name of the TWI port to use
  *  \param addr Target address
  *  \param buf Buffer to read from
  *  \param len Length of bytes to write
- *  \param stop Whether to end transaction or not
+ *  \param endstate What state to leave the bus on exit
  *  \return 0 on success, errors.h otherwise
  */
-int twi_write(twi_portname_t port, uint8_t addr, void *buf, uint8_t len, uint8_t stop);
+int twi_write(twi_portname_t port, void *buf, uint16_t len,
+            twi_end_t endstate);
 
 /** \brief Read a byte sequence from the specified address (master)
- *  \param portnum Number of the port
+ *
+ *  This can only be called after twi_start() in read mode has been
+ *  called. It can be called multiple times, provided that endstate ==
+ *  twi_more. Note: twi_stop implies NAK to the last byte received.
+ *
+ *  \param port Name of the TWI port to use
  *  \param addr Target address
  *  \param buf Buffer to write to
  *  \param len Length of bytes to read
- *  \param stop Whether to end transaction or not
+ *  \param endstate What state to leave the bus on exit
  *  \return 0 on success, errors.h otherwise
  */
-int twi_read(twi_portname_t port, uint8_t addr, void *buf, uint8_t len, uint8_t stop);
+int twi_read(twi_portname_t port, void *buf, uint16_t len,
+            twi_end_t endstate);
+
 
 #ifdef __cplusplus
 }
