@@ -75,13 +75,13 @@ typedef enum {
 
 /** \brief Define what SPI hardware exists */
 /* E5/B1/B3 has 1 SPI, A1/A1U has 4, everyone else has 2 */
-#if defined(_xmega_type_e5)|| defined(_xmega_type_b1) || defined (_xmega_type_b3)
+#if defined(_xmega_type_E5)|| defined(_xmega_type_B1) || defined (_xmega_type_B3)
 #define MAX_SPI_PORTS 1 /**< Maximum number of SPI ports supported */
 #define SPI_PORT_INIT {0} /**< Array to init port struct array with */
 typedef enum {
     spi_c = 0,  /**< SPI on PORTC, pins 4,5,6,7 */
 } spi_portname_t;
-#elif defined (_xmega_type_a1) || defined (_xmega_type_a1u)
+#elif defined (_xmega_type_A1) || defined (_xmega_type_A1U)
 #define MAX_SPI_PORTS 4 /**< Maximum number of SPI ports supported */
 #define SPI_PORT_INIT {0,0,0,0} /**< Array to init port struct array with */
 typedef enum {
@@ -101,9 +101,10 @@ typedef enum {
 
 /** \brief Initalise an SPI port
  *  \param port Name of the port
+ *  \param timeout_us Timeout in us for operations
  *  \return 0 for sucess, errors.h otherwise
  */
-int spi_init(spi_portname_t port);
+int spi_init(spi_portname_t port, uint16_t timeout_us);
 
 /** \brief Configure and SPI port
  *
@@ -143,6 +144,7 @@ int spi_conf(spi_portname_t port, spi_clkdiv_t clock, spi_mode_t mode, uint8_t t
  *  forces SPI port to transmit zeros (useful for reads).
  *  \param rx_buf A buffer containing len bytes to be written to from receive.
  *  May be NULL, this discards any read data (useful for writes).
+ *  \param len Length of each buffer (for both)
  *  \return data received or errors.h
  */
 int spi_txrx(spi_portname_t port, void *tx_buf, void *rx_buf, uint16_t len);

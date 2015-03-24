@@ -445,8 +445,8 @@ int w5500_init(spi_portname_t spi_port, PORT_t *cs_port, uint8_t cs_pin,
 	w5500_port->DIRSET = w5500_pin;
 	cs_end;
 
-	/* init the SPI port */
-	spi_init(spi_port);
+	/* init the SPI port, 200us timeout */
+	spi_init(spi_port,200);
 	spi_conf(spi_port,spi_perdiv2,spi_mode0,0x00);
 
 	/* validate that we're talking to the chip we expect */
@@ -514,12 +514,11 @@ int w5500_ip_conf(uint8_t *ip, uint8_t cidr, uint8_t *gw) {
         k_debug("no such device");
 		return -ENODEV;
 	}
-
 	/* compute mask from cidr length */
-	mask = (UINT32_C(0xffffffff) << (32-cidr));
+	mask = (0xffff << (32-cidr));
 
-    k_debug("updating IP address to %d.%d.%d.%d/%08x",
-        ip[0],ip[1],ip[2],ip[3],mask);
+    k_debug("updating IP address to %d.%d.%d.%d/%d.%d.%d.%d",
+        ip[0],ip[1],ip[2],ip[3],mask >> 24, mask >> 16, mask >> 8, mask & 0xff);
 	/* write the details to the common register */
 	_write_block(BLK_COMMON,COM_SIPR0,4,ip);
 	_write_block(BLK_COMMON,COM_SUBR0,4,(uint8_t *)&mask);
