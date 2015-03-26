@@ -81,15 +81,17 @@
 #define MAX580X_ID_5805 0x82
 
 /* query and report on an attached DAC */
-error_t max580x_init(twi_portname_t port, uint8_t addr) {
+int max580x_init(twi_portname_t port, uint8_t addr) {
     uint8_t buf[3], n = 0;
 
     buf[0] = I2C_VER; buf[1] = 0; buf[2] = 0;
 //    twi_write_nostop(port,DAC_ADDR(addr),buf,1);
 //    twi_read_restart(port,DAC_ADDR(addr),buf,2);
 
-    twi_write(port,DAC_ADDR(addr),buf,1,0);
-    twi_read(port,DAC_ADDR(addr),buf,2,1);
+    twi_start(port,DAC_ADDR(addr),twi_mode_write);
+    twi_write(port,buf,1,twi_more);
+    twi_start(port,DAC_ADDR(addr),twi_mode_read);
+    twi_read(port,buf,2,twi_stop);
 
     /* buf should contain some interesting bytes */
 
@@ -120,54 +122,65 @@ error_t max580x_init(twi_portname_t port, uint8_t addr) {
     buf[0] = MAX580X_POWER;
     buf[1] = 0; buf[2] = MAX580X_POWER_PD_HIZ;
 
-    twi_write(port,DAC_ADDR(addr),buf,3,1);
-    twi_read(port,DAC_ADDR(addr),buf,3,1);
-
-
+    twi_start(port,DAC_ADDR(addr),twi_mode_write);
+    twi_write(port,buf,3,twi_more);
+    twi_start(port,DAC_ADDR(addr),twi_mode_read);
+    twi_read(port,buf,3,twi_stop);
 
     /* configure !AUX to have no special function */
     console_message(0,"max580x: AUXn set to no function");
     buf[0] = MAX580X_CONFIG;
     buf[1] = 0;
     buf[2] = MAX580X_CONFIG_AUX_NONE;
-    twi_write(port,DAC_ADDR(addr),buf,3,1);
-    twi_read(port,DAC_ADDR(addr),buf,3,1);
+
+    twi_start(port,DAC_ADDR(addr),twi_mode_write);
+    twi_write(port,buf,3,twi_more);
+    twi_start(port,DAC_ADDR(addr),twi_mode_read);
+    twi_read(port,buf,3,twi_stop);
+
     printf("max580x: readback %02x%02x\r\n",buf[1],buf[2]);
 
     /* end the gate */
     buf[0] = MAX580X_CMD | MAX580X_CMD_END;
     buf[1] = 0;
     buf[2] = 0;
-    twi_write(port,DAC_ADDR(addr),buf,3,1);
-    twi_read(port,DAC_ADDR(addr),buf,3,1);
 
+    twi_start(port,DAC_ADDR(addr),twi_mode_write);
+    twi_write(port,buf,3,twi_more);
+    twi_start(port,DAC_ADDR(addr),twi_mode_read);
+    twi_read(port,buf,3,twi_stop);
 
     console_message(0,"max580x: config (ext ref, midscale, output en");
     /* ensure reference is set to external */
     buf[0] = MAX580X_REF | MAX580X_REF_EXT;
     buf[1] = 0; buf[2] = 0;
-    twi_write(port,DAC_ADDR(addr),buf,3,1);
-    twi_read(port,DAC_ADDR(addr),buf,3,1);
 
-
+    twi_start(port,DAC_ADDR(addr),twi_mode_write);
+    twi_write(port,buf,3,twi_more);
+    twi_start(port,DAC_ADDR(addr),twi_mode_read);
+    twi_read(port,buf,3,twi_stop);
 
     /* set to mid-scale */
     //buf[0] = MAX580X_CODELOAD;
     //buf[1] = 0x80; buf[2] = 0;
     //twi_write(port,DAC_ADDR(addr),buf,3);
 
-
-
     /* output enable */
     buf[0] = MAX580X_POWER;
     buf[1] = 0; buf[2] = MAX580X_POWER_NORMAL;
-    twi_write(port,DAC_ADDR(addr),buf,3,1);
-    twi_read(port,DAC_ADDR(addr),buf,3,1);
 
+    twi_start(port,DAC_ADDR(addr),twi_mode_write);
+    twi_write(port,buf,3,twi_more);
+    twi_start(port,DAC_ADDR(addr),twi_mode_read);
+    twi_read(port,buf,3,twi_stop);
 
     buf[0] = 0xf0; /* made up value for command */
-    twi_write(port,DAC_ADDR(addr),buf,1,0);
-    twi_read(port,DAC_ADDR(addr),buf,2,1);
+
+    twi_start(port,DAC_ADDR(addr),twi_mode_write);
+    twi_write(port,buf,1,twi_more);
+    twi_start(port,DAC_ADDR(addr),twi_mode_read);
+    twi_read(port,buf,2,twi_stop);
+
     printf("max580x: status %02x %02x\r\n",buf[0],buf[1]);
 
     return 0;
@@ -176,7 +189,7 @@ error_t max580x_init(twi_portname_t port, uint8_t addr) {
 /* set the DAC value to the given 16-bit value */
 /* note: the chip will ignore bits it has no support for, so we always
  * accept and write the full 16-bit value */
-error_t max580x_set(twi_portname_t port, uint8_t addr, uint16_t value) {
+int max580x_set(twi_portname_t port, uint8_t addr, uint16_t value) {
     uint8_t buf[3];
     int ret;
 
@@ -185,13 +198,18 @@ error_t max580x_set(twi_portname_t port, uint8_t addr, uint16_t value) {
     buf[0] = MAX580X_CODE;
     buf[1] = ((value & 0xff00) >> 8);
     buf[2] = (value & 0x00ff);
-    ret = twi_write(port,DAC_ADDR(addr),buf,3,1);
+
+    twi_start(port,DAC_ADDR(addr),twi_mode_write);
+    ret = twi_write(port,buf,3,twi_more);
+
     if (ret) {
         console_message(0,"max580x: failed DAC update");
         return -EINVAL;
     }
     /* do a read-back */
-    twi_read(port,DAC_ADDR(addr),buf,3,1);
+    twi_start(port,DAC_ADDR(addr),twi_mode_read);
+    twi_read(port,buf,3,twi_stop);
+
     printf("max580x: readback %02x%02x\r\n",buf[1],buf[2]);
 
     return 0;
@@ -201,8 +219,11 @@ uint16_t max580x_read(twi_portname_t port, uint8_t addr) {
     uint8_t buf[3];
 
     buf[0] = MAX580X_CODE;
-    twi_write(port,DAC_ADDR(addr),buf,1,0);
-    twi_read(port,DAC_ADDR(addr),buf,2,1);
+
+    twi_start(port,DAC_ADDR(addr),twi_mode_write);
+    twi_write(port,buf,1,twi_more);
+    twi_start(port,DAC_ADDR(addr),twi_mode_read);
+    twi_read(port,buf,2,twi_stop);
 
     return ((buf[1] << 8) | buf[0]);
 }

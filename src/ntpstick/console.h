@@ -37,7 +37,7 @@ typedef enum {
  *  \param mode Mode to operate this console in
  *  \return 0 on success, libkakapo/errors.h otherwise
  */
-error_t console_open(uint8_t chanid, FILE *stream, ch_mode_t mode);
+int console_open(uint8_t chanid, FILE *stream, ch_mode_t mode);
 
 /** \brief Close the channel.
  *
@@ -46,7 +46,7 @@ error_t console_open(uint8_t chanid, FILE *stream, ch_mode_t mode);
  *  \param chanid What channel number to close (0-n)
  *  \return 0 on success, libkakapo/errors.h otherwise
  */
-error_t console_close(uint8_t chanid);
+int console_close(uint8_t chanid);
 
 /** \brief Process characters coming in for a channel
  *
@@ -56,7 +56,7 @@ error_t console_close(uint8_t chanid);
  *  \param chanid What channel number to process (0-n)
  *  \return 0 on sucess, libkakapo/errors.h otherwise
  */
-error_t console_process(uint8_t chanid);
+int console_process(uint8_t chanid);
 
 /** \brief Set the prompt to be used for accepting commands
  *
@@ -68,7 +68,7 @@ error_t console_process(uint8_t chanid);
  *  \param prompt String to use as a prompt.
  *  \return 0 on success, libkakapo/errors.h otherwise
  */
-error_t console_set_prompt(uint8_t chanid, char *prompt);
+int console_set_prompt(uint8_t chanid, char *prompt);
 
 /** \brief Prompt for a command
  *
@@ -79,7 +79,7 @@ error_t console_set_prompt(uint8_t chanid, char *prompt);
  *  \param chanid What channel to accept a command on
  *  \return 0 on success, libkakapo/errors.h otherwise
  */
-error_t console_prompt(uint8_t chanid);
+int console_prompt(uint8_t chanid);
 
 /** \brief Output a log message to the console
  *
@@ -90,7 +90,7 @@ error_t console_prompt(uint8_t chanid);
  *  \param message Message string to post
  *  \return 0 on success, libkakapo/errors.h otherwise
  */
-error_t console_message(uint8_t chanid, char *message);
+int console_message(uint8_t chanid, char *message);
 
 void console_version(FILE *where);
 

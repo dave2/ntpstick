@@ -94,7 +94,7 @@ void telnetd_hook(uint8_t socket, w5500_event_t event);
 
 /* this function sets up the two sockets we'll need to listen on to get
  * connections to cycle */
-error_t telnetd_listen(uint8_t socka, uint8_t sockb) {
+int telnetd_listen(uint8_t socka, uint8_t sockb) {
     /* set up telnetd */
     w5500_socket_init(socka,2,2);
     w5500_tcp_listen(socka,23,&telnetd_hook);
@@ -107,7 +107,7 @@ error_t telnetd_listen(uint8_t socka, uint8_t sockb) {
 }
 
 /* this function handles all the telnetd commands we expect to see */
-error_t telnetd_command(FILE *stream) {
+int telnetd_command(FILE *stream) {
     switch (fgetc(stream)) {
         case TELNETD_IAC:
             /* ahh, this is an escape for some reason? never mind */

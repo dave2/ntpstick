@@ -51,7 +51,7 @@ console_t chan[CONSOLE_MAX_CHAN];
 void console_command(uint8_t chanid);
 
 /* Channel open is passed a stdio file, and starts accepting chars. */
-error_t console_open(uint8_t chanid, FILE *stream, ch_mode_t mode) {
+int console_open(uint8_t chanid, FILE *stream, ch_mode_t mode) {
     /* check to see we're not out of range */
     if (chanid >= CONSOLE_MAX_CHAN) {
         return -ENODEV;
@@ -76,7 +76,7 @@ error_t console_open(uint8_t chanid, FILE *stream, ch_mode_t mode) {
 
 /* close a console. I guess we should flush the stdio channel or
  * something? */
-error_t console_close(uint8_t chanid) {
+int console_close(uint8_t chanid) {
     /* check to see we're not out of range */
     if (chanid >= CONSOLE_MAX_CHAN) {
         return -ENODEV;
@@ -87,7 +87,7 @@ error_t console_close(uint8_t chanid) {
 }
 
 /* set a console prompt */
-error_t console_set_prompt(uint8_t chanid, char *prompt) {
+int console_set_prompt(uint8_t chanid, char *prompt) {
     uint16_t prompt_len;
 
     if (chanid >= CONSOLE_MAX_CHAN) {
@@ -110,7 +110,7 @@ error_t console_set_prompt(uint8_t chanid, char *prompt) {
 }
 
 /* prompt for a response */
-error_t console_prompt(uint8_t chanid) {
+int console_prompt(uint8_t chanid) {
     if (chanid >= CONSOLE_MAX_CHAN) {
         return -ENODEV;
     }
@@ -126,7 +126,7 @@ error_t console_prompt(uint8_t chanid) {
     return 0;
 }
 
-error_t console_process(uint8_t chanid) {
+int console_process(uint8_t chanid) {
     int c;
 
     if (chanid >= CONSOLE_MAX_CHAN) {
@@ -185,7 +185,7 @@ error_t console_process(uint8_t chanid) {
 }
 
 /* display a message */
-error_t console_message(uint8_t chanid, char *message) {
+int console_message(uint8_t chanid, char *message) {
     if (chanid >= CONSOLE_MAX_CHAN) {
         return -ENODEV;
     }

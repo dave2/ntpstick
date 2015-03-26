@@ -27,13 +27,13 @@
  *  \param sockb Second socket to listen on
  *  \return 0 on success, libkakapo/errors.h otherwise
  */
-error_t telnetd_listen(uint8_t socka, uint8_t sockb);
+int telnetd_listen(uint8_t socka, uint8_t sockb);
 
 /** \brief Stop listening for telnet connections
  *
  *  \return 0 on success, libkakapo/errors.h otherwise
  */
-error_t telnetd_close(void);
+int telnetd_close(void);
 
 /** \brief Process a given command obtained from the connection
  *
@@ -41,6 +41,6 @@ error_t telnetd_close(void);
  *  \param value Value byte
  *  \return 0 on success, libkakapo/errors.h otherwise
  */
-error_t telnetd_command(FILE *stream);
+int telnetd_command(FILE *stream);
 
 #endif // TELNETD_H_INCLUDED

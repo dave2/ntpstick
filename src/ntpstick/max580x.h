@@ -37,7 +37,7 @@
  * \param addr The bottom two address select bits (NOT the full adddress)
  * \return 0 on success, errors.h otherwise
  */
-error_t max580x_init(twi_portname_t port, uint8_t addr);
+int max580x_init(twi_portname_t port, uint8_t addr);
 
 /** \brief Set the DAC to a specific value
  *
@@ -51,7 +51,7 @@ error_t max580x_init(twi_portname_t port, uint8_t addr);
  * \param value The 16-bit value to set to the DAC to
  * \return 0 on success (readback from DAC), errors.h otherwise
  */
-error_t max580x_set(twi_portname_t port, uint8_t addr, uint16_t value);
+int max580x_set(twi_portname_t port, uint8_t addr, uint16_t value);
 
 /** \brief Read the current DAC value
  *
