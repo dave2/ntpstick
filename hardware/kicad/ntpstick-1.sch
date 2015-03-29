@@ -52,17 +52,22 @@ LIBS:recom-power
 LIBS:vcxo
 LIBS:max5805baub+
 LIBS:vcxo-7x5
+LIBS:lmr16006
+LIBS:tlv70xx
+LIBS:ublox-max
+LIBS:mcp4725
+LIBS:pdi-ser
 LIBS:ntpstick-1-cache
 EELAYER 25 0
 EELAYER END
 $Descr A4 11693 8268
 encoding utf-8
 Sheet 1 3
-Title "NTP Stick 1.0"
-Date ""
+Title "NTP Stick 1.2"
+Date "Sun 29 Mar 2015"
 Rev "1"
 Comp "hairy.geek.nz"
-Comment1 "CC BY-SA"
+Comment1 "CC-NZ-3.0 BY-SA"
 Comment2 "Not Production Proven"
 Comment3 ""
 Comment4 ""
@@ -111,7 +116,7 @@ U 1 1 525E3109
 P 2600 2650
 F 0 "J1" H 2600 2800 60  0000 C CNN
 F 1 "MOUNT0" H 2600 2500 60  0000 C CNN
-F 2 "Walter Pin Headers:pin_strip_1" H 2600 2650 60  0000 C CNN
+F 2 "Walter Pin Headers:pin_strip_1" H 2600 2650 60  0001 C CNN
 F 3 "" H 2600 2650 60  0000 C CNN
 	1    2600 2650
 	1    0    0    -1  
@@ -122,7 +127,7 @@ U 1 1 525E3116
 P 3100 2650
 F 0 "J2" H 3100 2800 60  0000 C CNN
 F 1 "MOUNT1" H 3100 2500 60  0000 C CNN
-F 2 "Walter Pin Headers:pin_strip_1" H 3100 2650 60  0000 C CNN
+F 2 "Walter Pin Headers:pin_strip_1" H 3100 2650 60  0001 C CNN
 F 3 "" H 3100 2650 60  0000 C CNN
 	1    3100 2650
 	-1   0    0    1   
@@ -141,4 +146,32 @@ Wire Wire Line
 	2400 4400 3150 4400
 NoConn ~ 2500 2650
 NoConn ~ 3200 2650
+$Comp
+L HEADER_1 J3
+U 1 1 551778B9
+P 2600 3300
+F 0 "J3" H 2600 3450 60  0000 C CNN
+F 1 "MOUNT2" H 2600 3150 60  0000 C CNN
+F 2 "Walter Pin Headers:pin_strip_1" H 2600 3300 60  0001 C CNN
+F 3 "" H 2600 3300 60  0000 C CNN
+	1    2600 3300
+	1    0    0    -1  
+$EndComp
+Text Notes 2750 3350 0    60   ~ 0
+Grounded mount point 4-40
+$Comp
+L GND #PWR01
+U 1 1 55177DDF
+P 2250 3400
+F 0 "#PWR01" H 2250 3150 50  0001 C CNN
+F 1 "GND" H 2250 3250 50  0000 C CNN
+F 2 "" H 2250 3400 60  0000 C CNN
+F 3 "" H 2250 3400 60  0000 C CNN
+	1    2250 3400
+	1    0    0    -1  
+$EndComp
+Wire Wire Line
+	2500 3300 2250 3300
+Wire Wire Line
+	2250 3300 2250 3400
 $EndSCHEMATC
