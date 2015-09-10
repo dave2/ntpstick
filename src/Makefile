@@ -7,7 +7,7 @@
 MCU=atxmega128a4u
 TOOLBASE=/usr/local/avr
 F_CPU=32000000
-DEBUG=4
+DEBUG ?= 0
 export MCU TOOLBASE PORT F_CPU DEBUG
 
 firmware:
